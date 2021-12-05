@@ -1,0 +1,78 @@
+---
+title: "Final Project Part 2"
+author: "SeungGeon Kim"
+date: '2021/12/05'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("tidyverse")
+library(tidyverse)
+```
+
+## Statement for the purpose of the analysis
+
+In this report, I decided to see if the death rates and the positive rates followed the same linear / expotential model or not, using the data from my country.
+
+The dataset that I utilized came from : "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data"
+
+```{r import_data, messsage = FALSE}
+
+global_cases <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+
+global_deaths <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
+
+global_cases <- global_cases %>% 
+  pivot_longer(cols = -c("Province/State", 
+                         "Country/Region", Lat, Long),
+               names_to = "date",
+               values_to = "cases") %>%
+  select (-c("Province/State", Lat, Long)) %>%
+  rename(Country_Region = "Country/Region")
+
+global_deaths <- global_deaths %>% 
+  pivot_longer(cols = -c("Province/State", 
+                         "Country/Region", Lat, Long),
+               names_to = "date",
+               values_to = "deaths") %>%
+  select (-c("Province/State", Lat, Long)) %>%
+  rename(Country_Region = "Country/Region")
+
+KR_cases <- global_cases %>%
+  filter(cases > 0) %>% 
+  mutate(cases = cases / 1000000) %>%
+  filter(str_detect(Country_Region, "Korea")) %>%
+  filter(str_detect(date, "7/21")) 
+
+KR_deaths <- global_deaths %>%
+  filter(deaths > 0) %>% 
+  mutate(deaths = deaths / 1000000) %>%
+  filter(str_detect(Country_Region, "Korea")) %>%
+  filter(str_detect(date, "7/21")) 
+
+KR_totals <- KR_cases %>% full_join(KR_deaths)
+
+```
+
+## Plotting the data
+
+```{r}
+
+KR_totals %>%
+  ggplot(aes(x = date, y = cases)) +
+  geom_point(aes(color = 'cases')) +
+  labs(title = "COVID19 cases in Korea (in millions)")
+
+KR_totals %>%
+  ggplot(aes(x = date, y = deaths)) +
+  geom_point(aes(color = 'deaths')) +
+  labs(title = "COVID19 deaths in Korea (in millions)")
+
+```
+
+## Analysis & Conclusion
+
+Positive rates was observed to be following a exponential model, while the death rates seemed to fit a linear one. 
+
+Possible bias for this analysis may depend on which group of people were found to be positive, since some group of people may be more vulnerable to the virus, while others may not. If the main group of people that were found to be positive was mostly the elderly ones, distributions may have been a little bit different, since their physical condition may contribute in increasing the total death rates observed.
